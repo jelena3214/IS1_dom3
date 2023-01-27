@@ -20,27 +20,25 @@ print(data.info())
 print(data.describe())
 print(data.describe(include=[object]))
 
-# data clensing
+# popunjavanje podataka koji nedostaju
 data.ENGINESIZE.fillna(data.ENGINESIZE.mean(), inplace=True)
 data.FUELTYPE.fillna(data.FUELTYPE.mode()[0], inplace=True)
 data.TRANSMISSION.fillna(data.TRANSMISSION.mode()[0], inplace=True)
 
-print(data.info())
-
-# the year is 2014 in whole dataset,there is no correlation with that atribute
+# u celom setu godina je 2014 pa je odbacujemo odmah
 data = data.drop(columns='MODELYEAR')
 
 sb.heatmap(data.corr(), square=True, center=0, annot=True)
 plt.show()
 
-cont_atributes = ['CYLINDERS', 'FUELCONSUMPTION_CITY', 'FUELCONSUMPTION_HWY', 'FUELCONSUMPTION_COMB',
+numeric_atr = ['CYLINDERS', 'FUELCONSUMPTION_CITY', 'FUELCONSUMPTION_HWY', 'FUELCONSUMPTION_COMB',
                   'FUELCONSUMPTION_COMB_MPG', 'ENGINESIZE']
 out = 'CO2EMISSIONS'
 
 fig, axis = plt.subplots(3, 2, figsize=(10, 8))
 i = 0
 j = 0
-for atr in cont_atributes:
+for atr in numeric_atr:
     axis[i, j].scatter(data[atr], data[out], s=5)
     axis[i, j].set_xlabel(atr, fontsize=5)
     axis[i, j].set_ylabel(out, fontsize=5)
@@ -50,11 +48,11 @@ for atr in cont_atributes:
         j = 0
 
 fig.tight_layout(pad=5)
+plt.show()
 
 plt.figure()
 sb.barplot(x='FUELTYPE', y=out, data=data)
 plt.show()
-
 sb.barplot(x=out, y="MAKE", data=data)
 plt.show()
 # check
@@ -64,20 +62,20 @@ sb.barplot(x=out, y='TRANSMISSION', data=data)
 plt.show()
 
 # sb.barplot(x=out, y = 'MODEL', data=data)
-# plt.show()  ???? model is not a category?
+# plt.show()  ???? model nije kategorija ima ih mnogo?
 
 sb.barplot(x=out, y='VEHICLECLASS', data=data)
 plt.show()
 
-# FUELCONSUMPTION_COMB_MPG is not linear so we do not take him
-cont_atributes.remove('FUELCONSUMPTION_COMB_MPG')
+# FUELCONSUMPTION_COMB_MPG nije linearan, izbacujemo ga
+numeric_atr.remove('FUELCONSUMPTION_COMB_MPG')
 input_var = ['VEHICLECLASS', 'ENGINESIZE', 'CYLINDERS', 'TRANSMISSION', 'FUELTYPE', 'FUELCONSUMPTION_CITY',
              'FUELCONSUMPTION_HWY', 'FUELCONSUMPTION_COMB']
 
 # make i model izbacujemo jer zasto bi bila bitna marka?
 data.drop(columns=['MAKE', 'MODEL', 'FUELCONSUMPTION_COMB_MPG'], inplace=True)
 
-# fueltype, transmission i vehicleclass cemo da onehot encodujemo
+# fueltype, transmission i vehicleclass cemo da encodujemo
 ohe = OneHotEncoder(dtype=int, sparse_output=False)
 # fit_transform zahteva promenu oblika
 fueltype = ohe.fit_transform(data['FUELTYPE'].to_numpy().reshape(-1, 1))
@@ -94,7 +92,7 @@ data = data.join(pd.DataFrame(data=vehicleclass, columns=ohe.get_feature_names_o
 
 # normalizacija numerickih podataka
 robust_scaler = RobustScaler()
-data[cont_atributes] = robust_scaler.fit_transform(data[cont_atributes])
+data[numeric_atr] = robust_scaler.fit_transform(data[numeric_atr])
 
 y = data[['CO2EMISSIONS']]
 X = data.drop(columns=out)
@@ -130,21 +128,33 @@ class LinearRegressionModel:
         self.iter = iter
         self.cost = []
         self.coef = []
+        self.features = None
+        self.target = None
 
     def fit(self, x, y):
-        self.coef = np.zeros((x.shape[1], 1))
+        self.features = x.copy(deep=True)
+        coef_shape = len(x.columns) + 1
+        self.coef = np.zeros(shape=coef_shape).reshape(-1, 1)
+        # Unosi se kolona jedinica za koeficijent c0,
+        # kao da je vrednost atributa uz c0 jednaka 1.
+        self.features.insert(0, 'c0', np.ones((len(x), 1)))
+        self.features = self.features.to_numpy()
+        self.target = y.to_numpy().reshape(-1, 1)
         num = x.shape[0]
 
         for it in range(self.iter):
-            error = np.dot(x, self.coef) - y
-            grad = np.dot(x.T, error)
+            error = np.dot(self.features, self.coef) - self.target
+            grad = np.dot(self.features.T, error)
             self.coef -= (self.lr / num) * grad
             c = np.sum((error ** 2)) / (2 * num)
             self.cost.append(c)
         return self
 
     def predict(self, x):
-        return np.dot(x, self.coef)
+        features = x.copy(deep=True)
+        features.insert(0, 'c0', np.ones((len(features), 1)))
+        features = features.to_numpy()
+        return features.dot(self.coef).reshape(-1, 1).flatten()
 
 
 model = LinearRegressionModel()
@@ -163,3 +173,10 @@ print("Test set: ")
 test_pred = model.predict(X_test)
 print("R2 score =", round(sm.r2_score(y_test, test_pred), 10))
 print("Root Mean squared error =", round(np.sqrt(sm.mean_squared_error(y_test, test_pred)), 10))
+
+plt.figure()
+plt.plot(np.arange(0, len(model.cost), 1), model.cost)
+plt.xlabel('Iteration', fontsize=13)
+plt.ylabel('MS error value', fontsize=13)
+plt.title('Mean-square error function')
+plt.show()

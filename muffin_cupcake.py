@@ -37,8 +37,6 @@ plt.show()
 scaler = MinMaxScaler()
 data[col] = scaler.fit_transform(data[col])
 
-print(data.describe())
-
 # cupcake = 0, muffin = 1
 type = LabelEncoder()
 
