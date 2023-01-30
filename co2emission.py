@@ -120,12 +120,31 @@ print("Trening set: ")
 print("R2 score: %.10f" % linear_model.score(X_train, y_train))
 print("Mean squared error: %.10f" % costFunction(linear_model.predict(X_train), y_train.values))
 print('\n')
+
+sb.regplot(x=y_train.values, y=linear_model.predict(X_train))
+plt.title("Correlation between predicted and true value on train set, sklearn model")
+plt.xlabel('Actual CO2Emissions')
+plt.ylabel('Predicted CO2Emissions')
+plt.show()
+
 print("Test set: ")
 print("R2 score: %.10f" % linear_model.score(X_test, y_test))
 print("Mean squared error: %.10f" % costFunction(linear_model.predict(X_test), y_test.values))
+
+sb.regplot(x=y_test.values, y=linear_model.predict(X_test))
+plt.title("Correlation between predicted and true value on test set, sklearn model")
+plt.xlabel('Actual CO2Emissions')
+plt.ylabel('Predicted CO2Emissions')
+plt.show()
+
 print('\n')
 print('\n')
 
+plt.hist(y_test - linear_model.predict(X_test))
+plt.title('Residual plot for sklearn model')
+plt.xlabel('Residual')
+plt.ylabel('Count')
+plt.show()
 
 # moj model
 class LinearRegressionModel:
@@ -174,19 +193,32 @@ print("R2 score =", round(sm.r2_score(y_train, predicted), 10))
 print("Mean squared error =", costFunction(predicted.reshape(len(predicted), 1), y_train.values))
 print('\n')
 
+sb.regplot(x=y_train.values, y=predicted)
+plt.title("Correlation between predicted and true value on train set, my model")
+plt.xlabel('Actual CO2Emissions')
+plt.ylabel('Predicted CO2Emissions')
+plt.show()
+
 print("Test set: ")
 test_pred = model.predict(X_test)
 print("R2 score =", round(sm.r2_score(y_test, test_pred), 10))
 print("Mean squared error =", costFunction(test_pred.reshape(len(test_pred), 1), y_test.values))
 
+sb.regplot(x=y_test.values, y=test_pred)
+plt.title("Correlation between predicted and true value on test set, my model")
+plt.xlabel('Actual CO2Emissions')
+plt.ylabel('Predicted CO2Emissions')
+plt.show()
+
+plt.hist(y_test - test_pred.reshape(len(test_pred), 1))
+plt.title('Residual plot for my model')
+plt.xlabel('Residual')
+plt.ylabel('Count')
+plt.show()
+
 plt.figure()
 plt.plot(np.arange(0, len(model.cost), 1), model.cost)
 plt.xlabel('Iteration', fontsize=13)
 plt.ylabel('MS error value', fontsize=13)
-plt.title('Mean-square error function')
+plt.title('Mean-square error function for my model')
 plt.show()
-
-"""linear_model.coef_ = model.coef.flatten()[1:]
-linear_model.intercept_ = model.coef.flatten()[0]
-print(f'LRGD score: {linear_model.score(X_train, y_train):.10f}')
-print(f'LRGD score: {linear_model.score(X_test, y_test):.10f}')"""

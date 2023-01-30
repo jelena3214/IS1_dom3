@@ -74,6 +74,15 @@ mse = mean_squared_error(y_test, y_pred_test)
 print(f'mse: {mse}')
 print('\n')
 
+from sklearn.metrics import confusion_matrix
+mat = confusion_matrix(y_test, y_pred_test)
+
+sb.heatmap(mat.T, square=True, annot=True, fmt='d', cbar=False)
+plt.title('Confusion matrix sklearn model')
+plt.xlabel('True class')
+plt.ylabel('Predicted class')
+plt.show()
+
 
 class KNNClassifier:
     def __init__(self, k, x_train, y_train):
@@ -120,6 +129,14 @@ test_predict = np.array(knnModel.predict(X_test))
 print("Test acc: %.5f" % accuracy_score(y_test, test_predict.reshape(len(test_predict), 1)))
 mse = mean_squared_error(y_test, test_predict)
 print(f'mse: {mse}')
+
+mat = confusion_matrix(y_test, test_predict)
+
+sb.heatmap(mat.T, square=True, annot=True, fmt='d', cbar=False)
+plt.title('Confusion matrix my model')
+plt.xlabel('True class')
+plt.ylabel('Predicted class')
+plt.show()
 
 """
 Zapazanja:
