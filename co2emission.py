@@ -8,6 +8,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, RobustScaler
 import sklearn.metrics as sm
 
+
+def costFunction(pred, true):
+    s = pow(pred - true, 2).sum()
+    return (0.5 / len(pred)) * s
+
+
 pd.set_option('display.max_columns', 7)
 pd.set_option('display.width', None)
 
@@ -32,7 +38,7 @@ sb.heatmap(data.corr(), square=True, center=0, annot=True)
 plt.show()
 
 numeric_atr = ['CYLINDERS', 'FUELCONSUMPTION_CITY', 'FUELCONSUMPTION_HWY', 'FUELCONSUMPTION_COMB',
-                  'FUELCONSUMPTION_COMB_MPG', 'ENGINESIZE']
+               'FUELCONSUMPTION_COMB_MPG', 'ENGINESIZE']
 out = 'CO2EMISSIONS'
 
 fig, axis = plt.subplots(3, 2, figsize=(10, 8))
@@ -98,7 +104,7 @@ y = data[['CO2EMISSIONS']]
 X = data.drop(columns=out)
 
 # split
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=234, shuffle=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, random_state=234, shuffle=True)
 
 # gotov model
 print('\n')
@@ -112,11 +118,11 @@ print(linear_model.intercept_)
 print('\n')
 print("Trening set: ")
 print("R2 score: %.10f" % linear_model.score(X_train, y_train))
-print("Root Mean squared error: %.10f" % np.sqrt(mean_squared_error(y_train, linear_model.predict(X_train))))
+print("Mean squared error: %.10f" % costFunction(linear_model.predict(X_train), y_train.values))
 print('\n')
 print("Test set: ")
 print("R2 score: %.10f" % linear_model.score(X_test, y_test))
-print("Root Mean squared error: %.10f" % np.sqrt(mean_squared_error(y_test, linear_model.predict(X_test))))
+print("Mean squared error: %.10f" % costFunction(linear_model.predict(X_test), y_test.values))
 print('\n')
 print('\n')
 
@@ -135,8 +141,6 @@ class LinearRegressionModel:
         self.features = x.copy(deep=True)
         coef_shape = len(x.columns) + 1
         self.coef = np.zeros(shape=coef_shape).reshape(-1, 1)
-        # Unosi se kolona jedinica za koeficijent c0,
-        # kao da je vrednost atributa uz c0 jednaka 1.
         self.features.insert(0, 'c0', np.ones((len(x), 1)))
         self.features = self.features.to_numpy()
         self.target = y.to_numpy().reshape(-1, 1)
@@ -164,15 +168,16 @@ model = model.fit(X_train, y_train)
 predicted = model.predict(X_train)
 
 print('Rezultati pravljenog modela: ')
+print(model.coef)
 print("Trening set: ")
 print("R2 score =", round(sm.r2_score(y_train, predicted), 10))
-print("Root Mean squared error =", round(np.sqrt(sm.mean_squared_error(y_train, predicted)), 10))
+print("Mean squared error =", costFunction(predicted.reshape(len(predicted), 1), y_train.values))
 print('\n')
 
 print("Test set: ")
 test_pred = model.predict(X_test)
 print("R2 score =", round(sm.r2_score(y_test, test_pred), 10))
-print("Root Mean squared error =", round(np.sqrt(sm.mean_squared_error(y_test, test_pred)), 10))
+print("Mean squared error =", costFunction(test_pred.reshape(len(test_pred), 1), y_test.values))
 
 plt.figure()
 plt.plot(np.arange(0, len(model.cost), 1), model.cost)
@@ -180,3 +185,8 @@ plt.xlabel('Iteration', fontsize=13)
 plt.ylabel('MS error value', fontsize=13)
 plt.title('Mean-square error function')
 plt.show()
+
+"""linear_model.coef_ = model.coef.flatten()[1:]
+linear_model.intercept_ = model.coef.flatten()[0]
+print(f'LRGD score: {linear_model.score(X_train, y_train):.10f}')
+print(f'LRGD score: {linear_model.score(X_test, y_test):.10f}')"""
